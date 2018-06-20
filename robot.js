@@ -1,4 +1,7 @@
-var Action = require('./action.js');
+var imports = require('./action.js');
+var Action = imports.Action;
+var Selector = imports.Selector;
+
 
 const IMG_WIDTH = 780, IMG_HEIGHT = 540;
 const VERT = 0, ORANGE = 1;
@@ -35,20 +38,9 @@ class Robot
 		dest.y = src.y;
 	}
 
-	displayOptions(type)
+	createAction(type)
 	{
-		this.action = new Action(type);
-		Robot.actionOptions.innerHTML = this.action.getOptions() + 
-		'<button id="addAction">Valider</button>';
-
-		document.querySelector("#addAction").addEventListener("click", this.addAction.bind(this));
-	}
-
-	addAction()
-	{
-		this.data[this.side].actions.push(this.action);
-		this.action = new Action(this.action.type);
-
+		this.data[this.side].actions.push(new Action(type));
 		this.displayActions();
 	}
 
@@ -60,12 +52,7 @@ class Robot
 			Robot.actionList.removeChild(Robot.actionList.lastChild);
 
 		for (let action of this.data[this.side].actions)
-		{
-			let el = document.createElement("li");
-			el.innerHTML = action.toString() + '<div class="suppr">&times;</div>';
-
-			Robot.actionList.appendChild(el);
-		}
+			Robot.actionList.appendChild(action.element);
 	}
 
 	draw()
@@ -93,24 +80,7 @@ class Robot
 
 	selectPoint(e)
 	{
-		if (e.target == Robot.selector)
-		{
-			if (!this.selectMode)
-			{
-				this.selectMode = true;
-				Robot.canvas.style.cursor = 'crosshair';
-				Robot.selector.className = 'selector active';
-				return;
-			}
-		}
-		else if (e.target != Robot.canvas || !this.selectMode)
-			return;
-
-		this.selectMode = false;
-		Robot.canvas.style.cursor = '';
-		Robot.selector.className = 'selector';
-		if (e.target == Robot.canvas)
-			this.setPosition(e.clientX, IMG_HEIGHT-e.clientY);
+		this.setPosition(e.clientX, IMG_HEIGHT-e.clientY);
 	}
 }
 
@@ -126,13 +96,15 @@ class Robot
 	
 	Robot.actionList = document.querySelector(".actionlist");
 	Robot.actionSelect = document.querySelector(".actionselect > select");
-	Robot.actionOptions = document.querySelector(".actionselect > .options");
+	Robot.actionCreate = document.querySelector(".actionselect > button");
 
 	Robot.canvas = document.querySelector("canvas");
 	Robot.ctx = Robot.canvas.getContext("2d");
 
 	Robot.xel = document.querySelector("#x");
 	Robot.yel = document.querySelector("#y");
+
+	Selector.init(Robot.canvas);
 
 
 	// Color switch
@@ -146,11 +118,9 @@ class Robot
 	Robot.yel.addEventListener("change", moveRobot);
 
 	// Position selection
-	var selectPoint = function(e) {
+	Robot.selector = new Selector(document.querySelector(".position > .selector"), function(e) {
 		Robot.active.selectPoint(e);
-	}
-	Robot.canvas.addEventListener("click", selectPoint);
-	Robot.selector.addEventListener("click", selectPoint);
+	});
 
 	// Mouse coords
 	Robot.canvas.addEventListener("mousemove", function(e){
@@ -158,8 +128,9 @@ class Robot
 	})
 
 	// Select action
-	Robot.actionSelect.addEventListener("change", function(e) {
-		Robot.active.displayOptions(e.target.value);
+	Robot.actionCreate.addEventListener("click", function(e) {
+		if (Robot.actionSelect.selectedIndex)
+			Robot.active.createAction(Robot.actionSelect.value);
 	});
 }());
 

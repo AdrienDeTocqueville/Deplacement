@@ -76,7 +76,7 @@ main .position
 	top: -3px;
 	right: 11px;
 	border-radius: 5px;
-    background-color: inherit;
+	background-color: inherit;
 }
 
 .selector.active
@@ -87,20 +87,21 @@ main .position
 
 
 .actionlist {
-  	list-style-type: none;
-    padding :0;
+	list-style-type: none;
+	padding :0;
 }
 .actionlist li {
 	font-size: 16px;
 	position: relative;
 	background: #ededed;
-    padding: 5px 0 5px 10px;
+	padding: 5px 0 5px 10px;
+	cursor: pointer;
 }
 .actionlist li:nth-child(odd) {background: #ccc;}
+li p{margin-top: 0;}
 
 .suppr
 {
-	cursor: pointer;
 	position: absolute;
 	top: -2px;
 	right: 3px;
@@ -117,8 +118,8 @@ main .position
 
 .actionselect select {
 	width: 99%; height: 21px;
-    border: none;
-    background: transparent;
+	border: none;
+	background: transparent;
 	font-size: 16px;
 
 	margin-bottom: 15px;
