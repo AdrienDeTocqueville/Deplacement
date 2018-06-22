@@ -65,12 +65,16 @@ main .position
 	position: relative;
 }
 
+input[type=number]{
+    width: 80px;
+}
+
 .selector
 {
 	cursor: pointer;
 	font-size: 24px;
 	line-height: 23px;
-	color: black;
+	color: #383C53;
 
 	position: absolute;
 	top: -3px;
@@ -87,9 +91,12 @@ main .position
 
 
 .actionlist {
+    max-height: 350px;
+    overflow: auto;
 	list-style-type: none;
 	padding :0;
 }
+
 .actionlist li {
 	font-size: 16px;
 	position: relative;
@@ -97,8 +104,31 @@ main .position
 	padding: 5px 0 5px 10px;
 	cursor: pointer;
 }
-.actionlist li:nth-child(odd) {background: #ccc;}
-li p{margin-top: 0;}
+.actionlist li:nth-child(odd)
+{
+	background: #ccc;
+}
+
+li p
+{
+	margin: 0;
+}
+li.options p
+{
+	margin-bottom: 15px;
+}
+
+.arrow
+{
+	position: absolute;
+	transform: rotateZ(0deg);
+	transition: 0.5s;
+
+}
+li.options > p > .arrow
+{
+	transform: rotateZ(90deg);
+}
 
 .suppr
 {
@@ -128,4 +158,9 @@ li p{margin-top: 0;}
 .actionselect option {
 	padding: 0;
 	font-family: 'BlinkMacSystemFont', 'Lucida Grande', 'Segoe UI', Ubuntu, Cantarell, sans-serif;
+}
+
+.waypoint
+{
+	margin-left: 15px;
 }

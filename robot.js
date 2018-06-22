@@ -44,13 +44,24 @@ class Robot
 		this.displayActions();
 	}
 
+	removeAction(action)
+	{
+		let index = this.data[this.side].actions.indexOf(action);
+		if (index > -1) {
+			this.data[this.side].actions.splice(index, 1);
+		}
+		
+		this.displayActions();
+		this.draw();
+	}
+
 	displayActions()
 	{
-		// Clear all and add them back
-		// It's dégeu and alors ?
+		// Empty list
 		while (Robot.actionList.lastChild)
 			Robot.actionList.removeChild(Robot.actionList.lastChild);
 
+		// Add actions elements
 		for (let action of this.data[this.side].actions)
 			Robot.actionList.appendChild(action.element);
 	}
@@ -58,12 +69,33 @@ class Robot
 	draw()
 	{
 		Robot.ctx.clearRect(0, 0, Robot.canvas.width, Robot.canvas.height);
-		
 		Robot.ctx.fillStyle="rgb(255, 236, 0)";
+
 		Robot.ctx.fillRect(
 			this.data[this.side].x - 0.5*this.width,
 			(IMG_HEIGHT-this.data[this.side].y) - 0.5*this.height,
 			this.width, this.height);
+
+		this.drawActions();
+	}
+
+	drawActions()
+	{
+		Robot.ctx.lineWidth = 3;
+		Robot.ctx.strokeStyle = 'blue';
+		Robot.ctx.lineCap = 'round';
+
+		let waypoints = this.data[this.side].actions.filter(action => (action.type == 'WAYPOINT' && action.x && action.y));
+
+		Robot.ctx.beginPath();
+		Robot.ctx.moveTo(this.data[this.side].x, IMG_HEIGHT - this.data[this.side].y);
+
+
+		for (let waypoint of waypoints)
+		{
+			Robot.ctx.lineTo(waypoint.x, IMG_HEIGHT - waypoint.y);
+		}
+		Robot.ctx.stroke();
 	}
 
 	switchColor()
@@ -105,6 +137,7 @@ class Robot
 	Robot.yel = document.querySelector("#y");
 
 	Selector.init(Robot.canvas);
+	Action.robot = Robot;
 
 
 	// Color switch
