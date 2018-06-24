@@ -2,29 +2,23 @@ var imports = require('./action.js');
 var Action = imports.Action;
 var Selector = imports.Selector;
 
-
 const IMG_WIDTH = 780, IMG_HEIGHT = 540;
-const VERT = 0, ORANGE = 1;
 
 class Robot
 {
-	constructor(width, height, x, y, side)
+	constructor(width, height)
 	{
-		Robot.active = this;
-
 		this.width = width;
 		this.height = height;
 
-		this.data = [{x, y, actions:[]}, {x, y, actions:[]}];
-
-		this.setColor(side || VERT);
-		this.computeSymmetric(this.data[this.side], this.data[1-this.side]);
+		this.teams = [{x: 0, y: 0, actions:[]}, {x: 0, y: 0, actions:[]}];
+		this.team = this.teams[0];
 	}
 
 	setPosition(x, y)
 	{
-		this.data[this.side].x = x;
-		this.data[this.side].y = y;
+		this.team.x = x;
+		this.team.y = y;
 
 		Robot.xel.value = x;
 		Robot.yel.value = y;
@@ -40,15 +34,15 @@ class Robot
 
 	createAction(type)
 	{
-		this.data[this.side].actions.push(new Action(type));
+		this.team.actions.push(new Action(type));
 		this.displayActions();
 	}
 
 	removeAction(action)
 	{
-		let index = this.data[this.side].actions.indexOf(action);
+		let index = this.team.actions.indexOf(action);
 		if (index > -1) {
-			this.data[this.side].actions.splice(index, 1);
+			this.team.actions.splice(index, 1);
 		}
 		
 		this.displayActions();
@@ -62,7 +56,7 @@ class Robot
 			Robot.actionList.removeChild(Robot.actionList.lastChild);
 
 		// Add actions elements
-		for (let action of this.data[this.side].actions)
+		for (let action of this.team.actions)
 			Robot.actionList.appendChild(action.element);
 	}
 
@@ -72,8 +66,8 @@ class Robot
 		Robot.ctx.fillStyle="rgb(255, 236, 0)";
 
 		Robot.ctx.fillRect(
-			this.data[this.side].x - 0.5*this.width,
-			(IMG_HEIGHT-this.data[this.side].y) - 0.5*this.height,
+			this.team.x - 0.5*this.width,
+			(IMG_HEIGHT-this.team.y) - 0.5*this.height,
 			this.width, this.height);
 
 		this.drawActions();
@@ -85,10 +79,10 @@ class Robot
 		Robot.ctx.strokeStyle = 'blue';
 		Robot.ctx.lineCap = 'round';
 
-		let waypoints = this.data[this.side].actions.filter(action => (action.type == 'WAYPOINT' && action.x && action.y));
+		let waypoints = this.team.actions.filter(action => (action.type == 'WAYPOINT' && action.x && action.y));
 
 		Robot.ctx.beginPath();
-		Robot.ctx.moveTo(this.data[this.side].x, IMG_HEIGHT - this.data[this.side].y);
+		Robot.ctx.moveTo(this.team.x, IMG_HEIGHT - this.team.y);
 
 
 		for (let waypoint of waypoints)
@@ -98,15 +92,10 @@ class Robot
 		Robot.ctx.stroke();
 	}
 
-	switchColor()
+	setTeam(team)
 	{
-		this.setColor(Robot.color.checked+0);
-	}
-
-	setColor(c)
-	{
-		this.side = c;
-		this.setPosition(this.data[this.side].x, this.data[this.side].y);
+		this.team = this.teams[team];
+		this.setPosition(this.team.x, this.team.y);
 		this.displayActions();
 	}
 
@@ -114,13 +103,54 @@ class Robot
 	{
 		this.setPosition(e.clientX, IMG_HEIGHT-e.clientY);
 	}
-}
 
+	save()
+	{
+		let saveObj = {
+			height: this.height,
+			width: this.width,
+			teams: [{}, {}]
+		};
+
+		for (let i of [0, 1])
+		{
+			saveObj.teams[i].x = this.teams[i].x;
+			saveObj.teams[i].y = this.teams[i].y;
+			
+			saveObj.teams[i].actions = [];
+			for (let action of this.teams[i].actions)
+				saveObj.teams[i].actions.push(action.save());
+		}
+
+		return saveObj;
+	}
+
+	load(obj)
+	{
+		this.height = obj.height;
+		this.width = obj.width;
+		this.teams = [{}, {}];
+
+		for (let i of [0, 1])
+		{
+			this.teams[i].x = obj.teams[i].x;
+			this.teams[i].y = obj.teams[i].y;
+			
+			this.teams[i].actions = [];
+			for (let action of obj.teams[i].actions)
+				this.teams[i].actions.push(new Action(action));
+		}
+
+		this.team = this.teams[Robot.color.checked+0];
+	}
+}
 
 // Init callbacks
 (function()
 {
-	Robot.active = null;
+	Robot.robots = [new Robot(20, 20), new Robot(10, 10)];
+	Robot.active = Robot.robots[0];
+
 	Robot.table = document.querySelector("img");
 	Robot.mousecoords = document.querySelector("#mousecoords");
 	Robot.color = document.querySelector(".switch input");
@@ -137,11 +167,11 @@ class Robot
 	Robot.yel = document.querySelector("#y");
 
 	Selector.init(Robot.canvas);
-	Action.robot = Robot;
+	Action.Robot = Robot;
 
 
 	// Color switch
-	Robot.color.addEventListener("change", function(){ Robot.active.switchColor() });
+	Robot.color.addEventListener("change", () => { Robot.active.setTeam(Robot.color.checked+0) });
 	
 	// Positon input
 	var moveRobot = function() {
@@ -167,5 +197,47 @@ class Robot
 	});
 }());
 
-let petit = new Robot(46, 36, 103, 404, VERT);
-petit.draw();
+
+// Define callbacks
+const fs = require('fs'); // file system
+const callbacks = require('electron').remote.getGlobal('callbacks');
+
+callbacks.onOpen = (fileName) => {
+    fs.readFile(fileName, 'utf-8', (err, data) => {
+        if(err)
+		alert("An error ocurred while opening file: " + err.message);
+		
+		// Load
+		data = JSON.parse(data);
+
+		Robot.robots[0].load(data.robots[0]);
+		Robot.robots[1].load(data.robots[1]);
+
+		Robot.active = Robot.robots[0];
+
+		// Init display
+		if (Selector.active)
+			Selector.active.desactivate();
+			
+		Robot.active.displayActions();
+		Robot.active.draw();
+    });
+}
+
+callbacks.onSave = (fileName) => {
+	let saveObj = {
+		robots: [
+			Robot.robots[0].save(),
+			Robot.robots[1].save()
+		]
+	};
+
+	fs.writeFile(fileName, JSON.stringify(saveObj), (err) => {
+        if(err)
+            alert("An error ocurred while writing file: " + err.message);
+    });
+}
+
+callbacks.onExport = (fileName) => {
+	console.log(fileName)
+}

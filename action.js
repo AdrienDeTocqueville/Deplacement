@@ -2,9 +2,16 @@ var Selector = require('./selector.js');
 
 class Action
 {
-	constructor(type)
+	constructor(arg)
 	{
-		this.type = type;
+		if (typeof arg == "object")
+		{
+			for (let prop in arg)
+				this[prop] = arg[prop];
+		}
+		else
+			this.type = arg;
+
 		this.options = null;
 
 		this.element = document.createElement("li");
@@ -45,7 +52,7 @@ class Action
 			switch (this.type)
 			{
 				case 'WAYPOINT':
-					this.options.className = "position waypoint";
+					this.options.className = "waypoint position";
 					this.options.innerHTML = `
 						x: <input id="x" type="number" width="3">
 						y: <input id="y" type="number" width="50">
@@ -69,10 +76,10 @@ class Action
 					break;
 
 				case 'EFFECTEUR':
-					this.options.appendChild("WAYPOINT");
+					this.options.className = "effecteur";
 
 				case 'WAIT':
-					this.options.appendChild("WAYPOINT");
+					this.options.className = "wait";
 			}
 
 			this.element.className = "options";
@@ -96,12 +103,37 @@ class Action
 
 		this.element.firstElementChild.firstElementChild.firstChild.nodeValue = this.toString();
 		
-		Action.robot.active.draw();
+		Action.Robot.active.draw();
 	}
 
 	delete()
 	{
-		Action.robot.active.removeAction(this);
+		Action.Robot.active.removeAction(this);
+	}
+
+	save()
+	{
+		let saveObj = {
+			type: this.type
+		};
+		
+		switch (this.type)
+		{
+			case 'WAYPOINT':
+				saveObj.x = this.x;
+				saveObj.y = this.y;
+				break;
+
+			case 'EFFECTEUR':
+				saveObj.action = this.action;
+				break;
+
+			case 'WAIT':
+				saveObj.duration = this.duration;
+				break;
+		}
+
+		return saveObj;
 	}
 }
 

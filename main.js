@@ -1,12 +1,36 @@
 const path = require('path')
 const url = require('url')
-const { app, BrowserWindow, Menu } = require('electron')
+const { app, BrowserWindow, Menu, dialog  } = require('electron')
 
 app.setName('Deplacement');
 
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
+global.callbacks = {
+	onOpen: null,
+	onSave: null,
+	onExport: null
+}
+
 let mainWindow = null;
+
+
+setMenu();
+
+app.on('ready', createWindow);
+
+app.on('window-all-closed', () => {
+	// On OS X it is common for applications and their menu bar
+	// to stay active until the user quits explicitly with Cmd + Q
+	if (process.platform !== 'darwin')
+		app.quit();
+});
+
+app.on('activate', () => {
+	// On OS X it's common to re-create a window in the app when the
+	// dock icon is clicked and there are no other windows open.
+	if (mainWindow === null)
+		createWindow();
+})
+
 
 function createWindow() {
 	const windowOptions = {
@@ -18,19 +42,76 @@ function createWindow() {
 
 	mainWindow = new BrowserWindow(windowOptions);
 
+	mainWindow.loadURL(url.format({
+		pathname: path.join(__dirname, 'index.html'),
+		protocol: 'file:',
+		slashes: true
+	}));
+
+	mainWindow.on('closed', () => {
+		mainWindow = null;
+	});
+}
+
+
+function setMenu()
+{
 	let template = [{
 		label: 'File',
 		submenu: [{
+			label: 'Open',
+			accelerator: 'CmdOrCtrl+O',
+			click: (item, focusedWindow) => {
+				const options = {
+					title: 'Open',
+					defaultPath: 'D:/Documents/AIR/',
+					filters: [
+						{ name: 'Deplacement', extensions: ['json'] }
+					]
+				};
+
+				dialog.showOpenDialog(options, (filename) => {
+					if (!filename || !global.callbacks.onOpen) return;
+					
+					global.callbacks.onOpen(filename[0]);
+				});
+			}
+		}, {
 			label: 'Save',
 			accelerator: 'CmdOrCtrl+S',
 			click: (item, focusedWindow) => {
-				console.log("Sauvegarder")
+				const options = {
+					title: 'Save as',
+					defaultPath: 'D:/Documents/AIR/',
+					filters: [
+						{ name: 'Deplacement', extensions: ['json'] }
+					]
+				};
+
+				dialog.showSaveDialog(options, (filename) => {
+					if (!filename || !global.callbacks.onSave) return;
+					
+					global.callbacks.onSave(filename);
+				});
 			}
 		}, {
 			label: 'Export',
 			accelerator: 'Shift+CmdOrCtrl+S',
 			click: (item, focusedWindow) => {
-				console.log("Exporter")
+				const options = {
+					title: 'Export as',
+					defaultPath: 'D:/Documents/AIR/',
+					buttonLabel: 'Export',
+					filters: [
+						{ name: 'C', extensions: ['c'] }
+					]
+				};
+
+				dialog.showSaveDialog(options, (filename) => {
+					if (!filename || !global.callbacks.onExport) return;
+					
+					global.callbacks.onExport(filename);
+				});
 			}
 		}, {
 			type: 'separator'
@@ -83,32 +164,4 @@ function createWindow() {
 
 	const menu = Menu.buildFromTemplate(template);
 	Menu.setApplicationMenu(menu);
-
-
-	mainWindow.loadURL(url.format({
-		pathname: path.join(__dirname, 'index.html'),
-		protocol: 'file:',
-		slashes: true
-	}));
-
-	mainWindow.on('closed', () => {
-		mainWindow = null;
-	});
 }
-
-
-app.on('ready', createWindow);
-
-app.on('window-all-closed', () => {
-	// On OS X it is common for applications and their menu bar
-	// to stay active until the user quits explicitly with Cmd + Q
-	if (process.platform !== 'darwin')
-		app.quit();
-});
-
-app.on('activate', () => {
-	// On OS X it's common to re-create a window in the app when the
-	// dock icon is clicked and there are no other windows open.
-	if (mainWindow === null)
-		createWindow();
-})
