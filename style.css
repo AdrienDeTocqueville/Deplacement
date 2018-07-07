@@ -102,7 +102,6 @@ input[type=number]{
 	position: relative;
 	background: #ededed;
 	padding: 5px 0 5px 10px;
-	cursor: pointer;
 }
 .actionlist li:nth-child(odd)
 {
@@ -112,6 +111,7 @@ input[type=number]{
 li p
 {
 	margin: 0;
+	cursor: pointer;
 }
 li.options p
 {
@@ -132,6 +132,7 @@ li.options > p > .arrow
 
 .suppr
 {
+	cursor: pointer;
 	position: absolute;
 	top: -2px;
 	right: 3px;
